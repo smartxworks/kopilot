@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kopilot-hub-webhook
+  namespace: kopilot-system
+spec:
+  selector:
+    name: kopilot-hub
+  ports:
+    - port: 443
+      targetPort: webhook

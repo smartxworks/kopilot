@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kopilot-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kopilot-hub
+  namespace: kopilot-system
+spec:
+  selector:
+    matchLabels:
+      name: kopilot-hub
+  template:
+    metadata:
+      labels:
+        name: kopilot-hub
+    spec:
+      serviceAccountName: kopilot-hub
+      containers:
+        - name: kopilot-hub
+          image: kopilot-hub
+          env:
+            - name: EXTERNAL_ADDR
+              valueFrom:
+                configMapKeyRef:
+                  name: kopilot-hub
+                  key: external_addr
+          ports:
+            - name: webhook
+              containerPort: 9443
+          volumeMounts:
+            - name: webhook-server-cert
+              mountPath: /tmp/k8s-webhook-server/serving-certs
+              readOnly: true
+        - name: kube-rbac-proxy
+          image: quay.io/brancz/kube-rbac-proxy:v0.10.0
+          ports:
+            - name: https
+              containerPort: 8443
+          args:
+            - --secure-listen-address=0.0.0.0:8443
+            - --upstream=http://127.0.0.1:8080/
+            - --ignore-paths=/kopilot-agent.yaml,/connect
+            - --logtostderr=true
+      volumes:
+        - name: webhook-server-cert
+          secret:
+            secretName: kopilot-hub-webhook-server-cert
+            defaultMode: 420
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kopilot-hub
+  namespace: kopilot-system
+spec:
+  type: NodePort
+  selector:
+    name: kopilot-hub
+  ports:
+    - port: 443
+      targetPort: https

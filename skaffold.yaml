@@ -1,0 +1,21 @@
+apiVersion: skaffold/v2beta16
+kind: Config
+metadata:
+  name: kopilot
+build:
+  local:
+    useBuildkit: true
+  artifacts:
+    - image: kopilot-hub
+      docker:
+        dockerfile: build/kopilot-hub/Dockerfile
+      requires:
+        - image: kopilot-agent
+          alias: AGENT_IMAGE
+    - image: kopilot-agent
+      docker:
+        dockerfile: build/kopilot-agent/Dockerfile
+deploy:
+  kustomize:
+    paths:
+      - config
