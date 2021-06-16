@@ -12,30 +12,37 @@ _Kopilot_ is a network tunnel used to proxy Kubernetes API requests to member cl
 
 ![architecture](docs/architecture.png)
 
-The _kopilot-agent_ running in a member cluster will first initiate a WebSocket connection to the _kopilot-hub_ running in the host cluster. Then, the WebSocket connection would be multiplexed with [Yamux](https://github.com/hashicorp/yamux) and used as the proxy channel to the Kubernetes API of the member cluster.
+The _kopilot-agent_ running in a member cluster will first initiate a WebSocket connection to the _kopilot-hub_ running in the host cluster. Then, the WebSocket connection will be multiplexed with [Yamux](https://github.com/hashicorp/yamux) and used as the proxy channel to the Kubernetes API of the member cluster.
+
+## Features
+
+- Proxies Kubernetes API requests to multiple member clusters
+- Only the host cluster needs to be externally addressable
+- Connections are secured and encrypted via HTTPS
+- Access to member clusters is protected by RBAC rules in the host cluster
 
 ## Getting Started
 
 ### Prerequisites
 
-For the **host** cluster:
+For the host cluster:
 
 - _Kubernetes_ 1.16+ / _minikube_ / _kind_
 - _cert-manager_ 1.0+
 
-For **member** clusters:
+For member clusters:
 
 - _Kubernetes_ 1.16+ / _minikube_ / _kind_
 
 ### Installation
 
-First, ensure that _cert-manager_ is installed on the **host** cluster. If it is not installed yet, you can install it as described in the _cert-manager_ [installation](https://cert-manager.io/docs/installation/kubernetes/) documentation. Alternatively, you can simply just run the single command below:
+First, ensure that _cert-manager_ is installed on the host cluster. If it is not installed yet, you can install it as described in the _cert-manager_ [installation](https://cert-manager.io/docs/installation/kubernetes/) documentation. Alternatively, you can simply just run the single command below:
 
 ```shell
 kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.3.1/cert-manager.yaml
 ```
 
-Once _cert-manager_ is running, you can now deploy the _kopilot-hub_ on the **host** cluster:
+Once _cert-manager_ is running, you can now deploy the _kopilot-hub_ on the host cluster:
 
 ```shell
 kubectl apply -f https://github.com/smartxworks/kopilot/releases/download/v0.1.0/kopilot.yaml
@@ -46,13 +53,13 @@ kubectl create configmap kopilot-hub -n kopilot-system --from-literal=external_a
 
 ## Usage
 
-First, create a `Cluster` object in the **host** cluster to represent one **member** cluster that needs to be proxied:
+First, create a `Cluster` object in the host cluster to represent one member cluster that needs to be proxied:
 
 ```shell
 kubectl apply -f https://raw.githubusercontent.com/smartxworks/kopilot/master/samples/cluster.yaml
 ```
 
-Then, deploy the _kopilot-agent_ on the **member** cluster:
+Then, deploy the _kopilot-agent_ on the member cluster:
 
 ```shell
 export TOKEN=$(kubectl get cluster/sample -o jsonpath='{.token}')
@@ -61,10 +68,10 @@ export MEMBER_KUBECONFIG=~/.kube/member_config  # change to your member cluster'
 curl -k "https://$EXTERNAL_IP:$EXTERNAL_PORT/kopilot-agent.yaml?token=$TOKEN&provider=$PROVIDER" | kubectl apply --kubeconfig=$MEMBER_KUBECONFIG -f -
 ```
 
-Once the _kopilot-agent_ is running, you can now send Kubernetes API requests to the **member** cluster from the **host** cluster with proper RBAC setups:
+Once the _kopilot-agent_ is running, you can now send Kubernetes API requests to the member cluster from the host cluster with proper RBAC rules:
 
 ```shell
-# create a kubectl pod with proper RBAC setups
+# create a kubectl pod with proper RBAC rules
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ServiceAccount
