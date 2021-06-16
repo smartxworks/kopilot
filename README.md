@@ -4,6 +4,7 @@
 [![codecov](https://codecov.io/gh/smartxworks/kopilot/branch/master/graph/badge.svg)](https://codecov.io/gh/smartxworks/kopilot)
 [![Maintainability](https://api.codeclimate.com/v1/badges/61de6301682f7c3c30a3/maintainability)](https://codeclimate.com/github/smartxworks/kopilot/maintainability)
 [![Go Report Card](https://goreportcard.com/badge/github.com/smartxworks/kopilot)](https://goreportcard.com/report/github.com/smartxworks/kopilot)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
 _Kopilot_ is a network tunnel used to proxy Kubernetes API requests to member clusters. _Kopilot_ leverages WebSocket as the underlying connection, secured via HTTPS.
 
