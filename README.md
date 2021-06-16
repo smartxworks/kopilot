@@ -25,7 +25,7 @@ For the **host** cluster:
 
 For **member** clusters:
 
-- _Kubernetes_ 1.16+
+- _Kubernetes_ 1.16+ / _minikube_ / _kind_
 
 ### Installation
 
@@ -56,30 +56,35 @@ Then, deploy the _kopilot-agent_ on the **member** cluster:
 
 ```shell
 export TOKEN=$(kubectl get cluster/sample -o jsonpath='{.token}')
-export MEMBER_KUBECONFIG=~/.kube/member_config  # change to your member kubeconfig path
-curl -k https://$EXTERNAL_IP:$EXTERNAL_PORT/kopilot-agent.yaml?token=$TOKEN | kubectl apply --kubeconfig=$MEMBER_KUBECONFIG -f -
+export PROVIDER=minikube  # only required if the member cluster is a minikube cluster
+export MEMBER_KUBECONFIG=~/.kube/member_config  # change to your member cluster's kubeconfig path
+curl -k "https://$EXTERNAL_IP:$EXTERNAL_PORT/kopilot-agent.yaml?token=$TOKEN&provider=$PROVIDER" | kubectl apply --kubeconfig=$MEMBER_KUBECONFIG -f -
 ```
 
 Once the _kopilot-agent_ is running, you can now send Kubernetes API requests to the **member** cluster from the **host** cluster with proper RBAC setups:
 
 ```shell
+# create a kubectl pod with proper RBAC setups
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: kopilot-client
+  name: kubectl
   namespace: kopilot-system
 ---
 apiVersion: v1
 kind: Pod
 metadata:
-  name: kopilot-client
+  name: kubectl
   namespace: kopilot-system
 spec:
-  serviceAccountName: kopilot-client
+  serviceAccountName: kubectl
   containers:
-    - name: curl
-      image: curlimages/curl
+    - name: kubectl
+      image: bitnami/kubectl
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
       command:
         - sleep
         - infinity
@@ -87,7 +92,7 @@ spec:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: kopilot-client
+  name: kubectl
 rules:
   - nonResourceURLs:
       - /proxy/*
@@ -97,19 +102,30 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: kopilot-client
+  name: kubectl
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: kopilot-client
+  name: kubectl
 subjects:
   - kind: ServiceAccount
-    name: kopilot-client
+    name: kubectl
     namespace: kopilot-system
 EOF
 
-kubectl exec -it pod/kopilot-client -n kopilot-system -- /bin/sh
-curl -k -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" https://kopilot-hub.kopilot-system/proxy/default_sample/version
+# get inside the pod
+kubectl exec -it pod/kubectl -n kopilot-system -- /bin/sh
+
+# create the member cluster's kubeconfig with service account token
+export CLUSTER=default_sample
+kubectl config set-cluster $CLUSTER --server=https://kopilot-hub.kopilot-system/proxy/$CLUSTER --insecure-skip-tls-verify=true
+kubectl config set-context $CLUSTER --cluster=$CLUSTER
+kubectl config set-credentials user --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+kubectl config set-context $CLUSTER --user=user
+kubectl config use-context $CLUSTER
+
+# get pods of the member cluster
+kubectl get pods -A
 ```
 
 ## License

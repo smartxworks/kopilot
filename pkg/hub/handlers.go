@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -190,11 +191,18 @@ func NewAgentYAMLHandler(externalAddr string, agentImageName string) *AgentYAMLH
 
 func (h *AgentYAMLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
+	provider := r.URL.Query().Get("provider")
+
+	k8sPKIDir := "/etc/kubernetes/pki"
+	if strings.ToLower(strings.TrimSpace(provider)) == "minikube" {
+		k8sPKIDir = "/var/lib/minikube/certs"
+	}
 
 	tmpl := template.Must(template.New("kopilot-agent.yaml").Parse(AgentYAMLTemplate))
 	data := map[string]string{
 		"imageName":  h.AgentImageName,
 		"connectURL": fmt.Sprintf("wss://%s/connect?token=%s", h.ExternalAddr, token),
+		"k8sPKIDir":  k8sPKIDir,
 	}
 	if err := tmpl.Execute(w, data); err != nil {
 		http.Error(w, fmt.Sprintf("failed to execute template: %s", err), http.StatusInternalServerError)

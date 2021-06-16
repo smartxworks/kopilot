@@ -35,4 +35,4 @@ spec:
       volumes:
         - name: kubernetes-pki
           hostPath:
-            path: /etc/kubernetes/pki
+            path: "{{ .k8sPKIDir }}"

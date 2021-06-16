@@ -49,6 +49,26 @@ func TestClusterConnectHandler(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestClusterConnectHandler_TokenInvalid(t *testing.T) {
+	token := fake.Characters()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	tokenMapper := mock.NewMockClusterTokenMapper(ctrl)
+	tokenMapper.EXPECT().MapClusterToken(gomock.Any(), token).Return("", nil)
+	handler := NewClusterConnectHandler(tokenMapper)
+	ts := httptest.NewServer(handler)
+	defer ts.Close()
+
+	u, err := url.Parse(ts.URL)
+	assert.NoError(t, err)
+
+	connectURL := fmt.Sprintf("ws://%s?token=%s", u.Host, token)
+	_, resp, err := websocket.DefaultDialer.Dial(connectURL, nil)
+	assert.Error(t, err)
+	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+}
+
 func TestClusterProxy(t *testing.T) {
 	id := fake.Characters()
 	expected := fake.Sentence()
@@ -89,6 +109,7 @@ func TestAgentYAMLHandler(t *testing.T) {
 	data := map[string]string{
 		"imageName":  agentImageName,
 		"connectURL": fmt.Sprintf("wss://%s/connect?token=%s", externalAddr, token),
+		"k8sPKIDir":  "/etc/kubernetes/pki",
 	}
 	err := tmpl.Execute(&expected, data)
 	assert.NoError(t, err)
