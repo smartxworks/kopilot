@@ -122,7 +122,7 @@ subjects:
 EOF
 
 # get inside the pod
-kubectl exec kubectl -n kopilot-system -it -- /bin/sh
+kubectl exec kubectl -n kopilot-system -it -- /bin/bash
 
 # create the member cluster's kubeconfig with service account token
 export CLUSTER=default_sample
