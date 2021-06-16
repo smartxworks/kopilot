@@ -22,11 +22,11 @@ spec:
         - name: kopilot-hub
           image: kopilot-hub
           env:
-            - name: EXTERNAL_ADDR
+            - name: PUBLIC_ADDR
               valueFrom:
                 configMapKeyRef:
                   name: kopilot-hub
-                  key: external_addr
+                  key: public_addr
           ports:
             - name: webhook
               containerPort: 9443

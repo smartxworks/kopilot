@@ -176,15 +176,15 @@ func (m *ClusterSessionManager) DialCluster(id string) (net.Conn, error) {
 var AgentYAMLTemplate string
 
 type AgentYAMLHandler struct {
-	ExternalAddr   string
+	PublicAddr     string
 	AgentImageName string
 }
 
 var _ http.Handler = &AgentYAMLHandler{}
 
-func NewAgentYAMLHandler(externalAddr string, agentImageName string) *AgentYAMLHandler {
+func NewAgentYAMLHandler(publicAddr string, agentImageName string) *AgentYAMLHandler {
 	return &AgentYAMLHandler{
-		ExternalAddr:   externalAddr,
+		PublicAddr:     publicAddr,
 		AgentImageName: agentImageName,
 	}
 }
@@ -201,7 +201,7 @@ func (h *AgentYAMLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.New("kopilot-agent.yaml").Parse(AgentYAMLTemplate))
 	data := map[string]string{
 		"imageName":  h.AgentImageName,
-		"connectURL": fmt.Sprintf("wss://%s/connect?token=%s", h.ExternalAddr, token),
+		"connectURL": fmt.Sprintf("wss://%s/connect?token=%s", h.PublicAddr, token),
 		"k8sPKIDir":  k8sPKIDir,
 	}
 	if err := tmpl.Execute(w, data); err != nil {

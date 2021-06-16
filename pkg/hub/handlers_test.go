@@ -100,7 +100,7 @@ func TestClusterProxy(t *testing.T) {
 }
 
 func TestAgentYAMLHandler(t *testing.T) {
-	externalAddr := fake.DomainName()
+	publicAddr := fake.DomainName()
 	agentImageName := fake.Characters()
 	token := fake.Characters()
 
@@ -108,7 +108,7 @@ func TestAgentYAMLHandler(t *testing.T) {
 	tmpl := template.Must(template.New("kopilot-agent.yaml").Parse(AgentYAMLTemplate))
 	data := map[string]string{
 		"imageName":  agentImageName,
-		"connectURL": fmt.Sprintf("wss://%s/connect?token=%s", externalAddr, token),
+		"connectURL": fmt.Sprintf("wss://%s/connect?token=%s", publicAddr, token),
 		"k8sPKIDir":  "/etc/kubernetes/pki",
 	}
 	err := tmpl.Execute(&expected, data)
@@ -119,7 +119,7 @@ func TestAgentYAMLHandler(t *testing.T) {
 	req.URL.RawQuery = fmt.Sprintf("token=%s", token)
 
 	rr := httptest.NewRecorder()
-	handler := NewAgentYAMLHandler(externalAddr, agentImageName)
+	handler := NewAgentYAMLHandler(publicAddr, agentImageName)
 	handler.ServeHTTP(rr, req)
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Equal(t, expected.String(), rr.Body.String())

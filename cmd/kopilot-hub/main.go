@@ -37,8 +37,8 @@ import (
 func main() {
 	bindAddr := "127.0.0.1:8080"
 	flag.StringVar(&bindAddr, "bind", bindAddr, "bind address")
-	externalAddr := "kopilot-hub.kopilot-system"
-	flag.StringVar(&externalAddr, "external-addr", externalAddr, "external address of server")
+	publicAddr := "kopilot-hub.kopilot-system"
+	flag.StringVar(&publicAddr, "public-addr", publicAddr, "public address of server")
 	agentImageName := "kopilot-agent"
 	flag.StringVar(&agentImageName, "agent-image", agentImageName, "kopilot-agent image")
 	flag.Parse()
@@ -62,7 +62,7 @@ func main() {
 
 	clusterSessionManager := hub.NewClusterSessionManager()
 
-	agentYAMLHandler := hub.NewAgentYAMLHandler(externalAddr, agentImageName)
+	agentYAMLHandler := hub.NewAgentYAMLHandler(publicAddr, agentImageName)
 	clusterConnectHandler := hub.NewClusterConnectHandler(clusterRepository)
 	clusterConnectHandler.AddCallbacks(clusterSessionManager)
 	clusterProxy := hub.NewClusterProxy(clusterSessionManager)

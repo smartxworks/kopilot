@@ -46,9 +46,10 @@ Once _cert-manager_ is running, you can now deploy the _kopilot-hub_ on the host
 
 ```shell
 kubectl apply -f https://github.com/smartxworks/kopilot/releases/download/v0.1.0/kopilot.yaml
-export EXTERNAL_PORT=$(kubectl get service/kopilot-hub -n kopilot-system -o jsonpath='{.spec.ports[0].nodePort}')
-export EXTERNAL_IP=192.168.49.2  # change to your Kubernetes node IP
-kubectl create configmap kopilot-hub -n kopilot-system --from-literal=external_addr=$EXTERNAL_IP:$EXTERNAL_PORT
+export HUB_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}')
+echo $HUB_IP  # change if the value is incorrect
+export HUB_PORT=$(kubectl get service kopilot-hub -n kopilot-system -o jsonpath='{.spec.ports[0].nodePort}')
+kubectl create configmap kopilot-hub -n kopilot-system --from-literal=public_addr=$HUB_IP:$HUB_PORT
 ```
 
 ## Usage
@@ -62,10 +63,10 @@ kubectl apply -f https://raw.githubusercontent.com/smartxworks/kopilot/master/sa
 Then, deploy the _kopilot-agent_ on the member cluster:
 
 ```shell
-export TOKEN=$(kubectl get cluster/sample -o jsonpath='{.token}')
+export TOKEN=$(kubectl get cluster sample -o jsonpath='{.token}')
 export PROVIDER=minikube  # only required if the member cluster is a minikube cluster
 export MEMBER_KUBECONFIG=~/.kube/member_config  # change to your member cluster's kubeconfig path
-curl -k "https://$EXTERNAL_IP:$EXTERNAL_PORT/kopilot-agent.yaml?token=$TOKEN&provider=$PROVIDER" | kubectl apply --kubeconfig=$MEMBER_KUBECONFIG -f -
+curl -k "https://$HUB_IP:$HUB_PORT/kopilot-agent.yaml?token=$TOKEN&provider=$PROVIDER" | kubectl apply --kubeconfig=$MEMBER_KUBECONFIG -f -
 ```
 
 Once the _kopilot-agent_ is running, you can now send Kubernetes API requests to the member cluster from the host cluster with proper RBAC rules:
@@ -121,7 +122,7 @@ subjects:
 EOF
 
 # get inside the pod
-kubectl exec -it pod/kubectl -n kopilot-system -- /bin/sh
+kubectl exec kubectl -n kopilot-system -it -- /bin/sh
 
 # create the member cluster's kubeconfig with service account token
 export CLUSTER=default_sample
