@@ -1,7 +1,7 @@
 # Kopilot
 
 [![build](https://github.com/smartxworks/kopilot/actions/workflows/build.yml/badge.svg)](https://github.com/smartxworks/kopilot/actions/workflows/build.yml)
-[![codecov](https://codecov.io/gh/smartxworks/kopilot/branch/master/graph/badge.svg)](https://codecov.io/gh/smartxworks/kopilot)
+[![codecov](https://codecov.io/gh/smartxworks/kopilot/branch/master/graph/badge.svg?token=CG68MX4QJ9)](https://codecov.io/gh/smartxworks/kopilot)
 [![Maintainability](https://api.codeclimate.com/v1/badges/61de6301682f7c3c30a3/maintainability)](https://codeclimate.com/github/smartxworks/kopilot/maintainability)
 [![Go Report Card](https://goreportcard.com/badge/github.com/smartxworks/kopilot)](https://goreportcard.com/report/github.com/smartxworks/kopilot)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
