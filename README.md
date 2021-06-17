@@ -63,10 +63,11 @@ kubectl apply -f https://raw.githubusercontent.com/smartxworks/kopilot/master/sa
 Then, deploy the _kopilot-agent_ on the member cluster:
 
 ```shell
+export HUB_ADDR=$(kubectl get configmap kopilot-hub -n kopilot-system -o jsonpath='{.data.public_addr}')
 export TOKEN=$(kubectl get cluster sample -o jsonpath='{.token}')
 export PROVIDER=minikube  # only required if the member cluster is a minikube cluster
-export MEMBER_KUBECONFIG=~/.kube/member_config  # change to your member cluster's kubeconfig path
-curl -k "https://$HUB_IP:$HUB_PORT/kopilot-agent.yaml?token=$TOKEN&provider=$PROVIDER" | kubectl apply --kubeconfig=$MEMBER_KUBECONFIG -f -
+export MEMBER_KUBECONFIG=~/.kube/member.config  # change to your member cluster's kubeconfig path
+curl -k "https://$HUB_ADDR/kopilot-agent.yaml?token=$TOKEN&provider=$PROVIDER" | kubectl apply --kubeconfig=$MEMBER_KUBECONFIG -f -
 ```
 
 Once the _kopilot-agent_ is running, you can now send Kubernetes API requests to the member cluster from the host cluster with proper RBAC rules:
