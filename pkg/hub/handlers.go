@@ -21,6 +21,8 @@ import (
 	_ "embed"
 	"fmt"
 	"html/template"
+	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -136,8 +138,8 @@ type ClusterDialer interface {
 }
 
 type ClusterSessionManager struct {
-	sessions map[string]*yamux.Session
-	mutex    sync.Mutex
+	sessionLists map[string][]*yamux.Session
+	mutex        sync.Mutex
 }
 
 var _ ClusterConnectHandlerCallback = &ClusterSessionManager{}
@@ -145,7 +147,7 @@ var _ ClusterDialer = &ClusterSessionManager{}
 
 func NewClusterSessionManager() *ClusterSessionManager {
 	return &ClusterSessionManager{
-		sessions: map[string]*yamux.Session{},
+		sessionLists: map[string][]*yamux.Session{},
 	}
 }
 
@@ -153,23 +155,37 @@ func (m *ClusterSessionManager) OnNewClusterSession(id string, s *yamux.Session)
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	sess := m.sessions[id]
-	if sess != nil {
-		sess.Close()
+	ss := m.sessionLists[id]
+	if ss == nil {
+		ss = []*yamux.Session{}
 	}
-
-	m.sessions[id] = s
+	ss = append(ss, s)
+	m.sessionLists[id] = ss
 }
 
 func (m *ClusterSessionManager) DialCluster(id string) (net.Conn, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	sess := m.sessions[id]
-	if sess == nil {
-		return nil, fmt.Errorf("no session found for cluster %q", id)
+	ss := m.sessionLists[id]
+	for {
+		if len(ss) == 0 {
+			return nil, fmt.Errorf("no session found for cluster %q", id)
+		}
+
+		idx := rand.Intn(len(ss))
+		log.Printf("dialing cluster %q with session #%d", id, idx)
+		conn, err := ss[idx].Open()
+		if err != nil {
+			log.Printf("removing session #%d of cluster %q due to dial error: %s", idx, id, err)
+			ss[idx].Close()
+			ss = append(ss[:idx], ss[idx+1:]...)
+			m.sessionLists[id] = ss
+			continue
+		}
+
+		return conn, nil
 	}
-	return sess.Open()
 }
 
 //go:embed kopilot-agent.yaml
