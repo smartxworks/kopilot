@@ -1,4 +1,20 @@
-package hub
+/*
+Copyright 2021.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package hub_test
 
 import (
 	"bytes"
@@ -16,10 +32,11 @@ import (
 	"github.com/icrowley/fake"
 	assert "github.com/stretchr/testify/require"
 
+	"github.com/smartxworks/kopilot/pkg/hub"
 	"github.com/smartxworks/kopilot/pkg/hub/mock"
 )
 
-//go:generate mockgen -source=handlers.go -destination=mock/mock.go -package=mock
+//go:generate mockgen -source=handlers.go -destination=mock/handlers.go -package=mock
 
 func TestClusterConnectHandler(t *testing.T) {
 	id := fake.Characters()
@@ -29,7 +46,7 @@ func TestClusterConnectHandler(t *testing.T) {
 	defer ctrl.Finish()
 	tokenMapper := mock.NewMockClusterTokenMapper(ctrl)
 	tokenMapper.EXPECT().MapClusterToken(gomock.Any(), token).Return(id, nil)
-	handler := NewClusterConnectHandler(tokenMapper)
+	handler := hub.NewClusterConnectHandler(tokenMapper)
 
 	callback := mock.NewMockClusterConnectHandlerCallback(ctrl)
 	callback.EXPECT().OnNewClusterSession(id, gomock.Any())
@@ -56,7 +73,7 @@ func TestClusterConnectHandler_TokenInvalid(t *testing.T) {
 	defer ctrl.Finish()
 	tokenMapper := mock.NewMockClusterTokenMapper(ctrl)
 	tokenMapper.EXPECT().MapClusterToken(gomock.Any(), token).Return("", nil)
-	handler := NewClusterConnectHandler(tokenMapper)
+	handler := hub.NewClusterConnectHandler(tokenMapper)
 	ts := httptest.NewServer(handler)
 	defer ts.Close()
 
@@ -88,7 +105,7 @@ func TestClusterProxy(t *testing.T) {
 		}
 		return net.Dial("tcp", u.Host)
 	})
-	proxy := NewClusterProxy(dialer)
+	proxy := hub.NewClusterProxy(dialer)
 
 	req, err := http.NewRequest(http.MethodGet, "/", nil)
 	assert.NoError(t, err)
@@ -105,7 +122,7 @@ func TestAgentYAMLHandler(t *testing.T) {
 	token := fake.Characters()
 
 	var expected bytes.Buffer
-	tmpl := template.Must(template.New("kopilot-agent.yaml").Parse(AgentYAMLTemplate))
+	tmpl := template.Must(template.New("kopilot-agent.yaml").Parse(hub.AgentYAMLTemplate))
 	data := map[string]string{
 		"imageName":  agentImageName,
 		"connectURL": fmt.Sprintf("wss://%s/connect?token=%s", publicAddr, token),
@@ -119,7 +136,7 @@ func TestAgentYAMLHandler(t *testing.T) {
 	req.URL.RawQuery = fmt.Sprintf("token=%s", token)
 
 	rr := httptest.NewRecorder()
-	handler := NewAgentYAMLHandler(publicAddr, agentImageName)
+	handler := hub.NewAgentYAMLHandler(publicAddr, agentImageName)
 	handler.ServeHTTP(rr, req)
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Equal(t, expected.String(), rr.Body.String())

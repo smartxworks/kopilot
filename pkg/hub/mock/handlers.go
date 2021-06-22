@@ -10,7 +10,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	yamux "github.com/hashicorp/yamux"
+	hub "github.com/smartxworks/kopilot/pkg/hub"
 )
 
 // MockClusterTokenMapper is a mock of ClusterTokenMapper interface.
@@ -75,7 +75,7 @@ func (m *MockClusterConnectHandlerCallback) EXPECT() *MockClusterConnectHandlerC
 }
 
 // OnNewClusterSession mocks base method.
-func (m *MockClusterConnectHandlerCallback) OnNewClusterSession(id string, sess *yamux.Session) {
+func (m *MockClusterConnectHandlerCallback) OnNewClusterSession(id string, sess hub.ClusterSession) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "OnNewClusterSession", id, sess)
 }
