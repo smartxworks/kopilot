@@ -20,6 +20,7 @@ The _kopilot-agent_ running in a member cluster will first initiate a WebSocket 
 - Only the host cluster needs to be externally addressable
 - Connections are secured and encrypted via HTTPS
 - Access to member clusters is protected by RBAC rules on the host cluster
+- Runs on x86_64 or ARM64
 
 ## Getting Started
 
