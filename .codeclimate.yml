@@ -1,0 +1,4 @@
+exclude_patterns:
+  - "**/mock/"
+  - "**/zz_generated.deepcopy.go"
+  - "pkg/k8s/client/"
