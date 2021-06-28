@@ -86,6 +86,44 @@ func (mr *MockClusterConnectHandlerCallbackMockRecorder) OnNewClusterSession(id,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnNewClusterSession", reflect.TypeOf((*MockClusterConnectHandlerCallback)(nil).OnNewClusterSession), id, sess)
 }
 
+// MockPeersLister is a mock of PeersLister interface.
+type MockPeersLister struct {
+	ctrl     *gomock.Controller
+	recorder *MockPeersListerMockRecorder
+}
+
+// MockPeersListerMockRecorder is the mock recorder for MockPeersLister.
+type MockPeersListerMockRecorder struct {
+	mock *MockPeersLister
+}
+
+// NewMockPeersLister creates a new mock instance.
+func NewMockPeersLister(ctrl *gomock.Controller) *MockPeersLister {
+	mock := &MockPeersLister{ctrl: ctrl}
+	mock.recorder = &MockPeersListerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPeersLister) EXPECT() *MockPeersListerMockRecorder {
+	return m.recorder
+}
+
+// ListPeers mocks base method.
+func (m *MockPeersLister) ListPeers(ctx context.Context) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPeers", ctx)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListPeers indicates an expected call of ListPeers.
+func (mr *MockPeersListerMockRecorder) ListPeers(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPeers", reflect.TypeOf((*MockPeersLister)(nil).ListPeers), ctx)
+}
+
 // MockClusterDialer is a mock of ClusterDialer interface.
 type MockClusterDialer struct {
 	ctrl     *gomock.Controller

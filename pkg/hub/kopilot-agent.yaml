@@ -9,6 +9,7 @@ metadata:
   name: kopilot-agent
   namespace: kopilot-system
 spec:
+  replicas: 2
   selector:
     matchLabels:
       name: kopilot-agent

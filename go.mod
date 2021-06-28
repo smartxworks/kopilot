@@ -12,6 +12,7 @@ require (
 	github.com/icrowley/fake v0.0.0-20180203215853-4178557ae428
 	github.com/namsral/flag v1.7.4-pre
 	github.com/stretchr/testify v1.7.0
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	k8s.io/apimachinery v0.21.1
 	k8s.io/client-go v0.21.1
 	sigs.k8s.io/controller-runtime v0.9.0

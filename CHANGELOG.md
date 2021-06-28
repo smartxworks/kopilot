@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for minikube and kind member clusters
 - Support for multiple agent replicas on one member cluster
+- Support for multiple hub replicas
 
 ## Changed
 

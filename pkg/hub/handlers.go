@@ -106,6 +106,8 @@ type ClusterConnectHandlerCallback interface {
 
 type ClusterProxy struct {
 	ClusterDialer ClusterDialer
+	PeersLister   PeersLister
+	TryNextPeer   func(w http.ResponseWriter, r *http.Request, e error, id string, nextPeer func() string)
 }
 
 func NewClusterProxy(d ClusterDialer) *ClusterProxy {
@@ -128,7 +130,30 @@ func (h *ClusterProxy) Proxy(w http.ResponseWriter, r *http.Request, vars map[st
 			return h.ClusterDialer.DialCluster(id)
 		},
 	}
+	if h.PeersLister != nil && h.TryNextPeer != nil {
+		rp.ErrorHandler = func(w http.ResponseWriter, r *http.Request, e error) {
+			peers, err := h.PeersLister.ListPeers(r.Context())
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			idx := -1
+			nextPeer := func() string {
+				idx++
+				if idx >= len(peers) {
+					return ""
+				}
+				return peers[idx]
+			}
+			h.TryNextPeer(w, r, e, id, nextPeer)
+		}
+	}
 	rp.ServeHTTP(w, r)
+}
+
+type PeersLister interface {
+	ListPeers(ctx context.Context) ([]string, error)
 }
 
 type ClusterDialer interface {
