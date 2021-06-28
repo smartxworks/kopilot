@@ -17,6 +17,7 @@ metadata:
   name: kopilot-hub-peer-cert
   namespace: kopilot-system
 spec:
+  duration: 87600h
   dnsNames:
     - kopilot-hub.kopilot-system.svc
     - kopilot-hub.kopilot-system.svc.cluster.local
