@@ -116,6 +116,50 @@ func TestClusterProxy(t *testing.T) {
 	assert.Equal(t, expected, rr.Body.String())
 }
 
+func TestClusterProxy_LB(t *testing.T) {
+	id := fake.Characters()
+	expected := fake.Sentence()
+
+	proxiedServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, expected)
+	}))
+	proxiedServer.Close()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	dialer := mock.NewMockClusterDialer(ctrl)
+	dialer.EXPECT().DialCluster(id).DoAndReturn(func(_ string) (net.Conn, error) {
+		u, err := url.Parse(proxiedServer.URL)
+		if err != nil {
+			return nil, err
+		}
+		return net.Dial("tcp", u.Host)
+	})
+	proxy := hub.NewClusterProxy(dialer)
+
+	peers := []string{fake.DomainName(), fake.DomainName()}
+	peersLister := mock.NewMockPeersLister(ctrl)
+	peersLister.EXPECT().ListPeers(gomock.Any()).Return(peers, nil)
+	proxy.PeersLister = peersLister
+	peerBody := fake.Sentence()
+	proxy.TryNextPeer = func(w http.ResponseWriter, r *http.Request, e error, id string, nextPeer func() string) {
+		for i := 0; i < len(peers); i++ {
+			peer := nextPeer()
+			assert.Equal(t, peers[i], peer)
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(peerBody))
+	}
+
+	req, err := http.NewRequest(http.MethodGet, "/", nil)
+	assert.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	proxy.Proxy(rr, req, map[string]string{"id": id})
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, peerBody, rr.Body.String())
+}
+
 func TestAgentYAMLHandler(t *testing.T) {
 	publicAddr := fake.DomainName()
 	agentImageName := fake.Characters()
