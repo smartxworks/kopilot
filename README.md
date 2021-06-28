@@ -47,7 +47,7 @@ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.3
 Once _cert-manager_ is running, you can now deploy the _kopilot-hub_ on the host cluster:
 
 ```shell
-kubectl apply -f https://github.com/smartxworks/kopilot/releases/download/v0.1.0/kopilot.yaml
+kubectl apply -f https://github.com/smartxworks/kopilot/releases/download/v0.2.0/kopilot.yaml
 export HUB_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}')
 echo $HUB_IP  # change if the value is incorrect
 export HUB_PORT=$(kubectl get service kopilot-hub -n kopilot-system -o jsonpath='{.spec.ports[0].nodePort}')
