@@ -46,6 +46,8 @@ import (
 var bindAddr = "127.0.0.1:8080"
 var publicAddr = "kopilot-hub.kopilot-system"
 var agentImageName = "kopilot-agent"
+var serviceName = "kopilot-hub"
+var serviceNamespace = "kopilot-system"
 var ip = ""
 var peerBindAddr = "0.0.0.0:6443"
 var peerCertDir = "/tmp/kopilot-hub/peer-certs"
@@ -54,6 +56,8 @@ func main() {
 	flag.StringVar(&bindAddr, "bind", bindAddr, "bind address")
 	flag.StringVar(&publicAddr, "public-addr", publicAddr, "public address of server")
 	flag.StringVar(&agentImageName, "agent-image", agentImageName, "kopilot-agent image")
+	flag.StringVar(&serviceName, "service-name", serviceName, "name of kopilot-hub service")
+	flag.StringVar(&serviceNamespace, "service-namespace", serviceNamespace, "namespace of kopilot-hub service")
 	flag.StringVar(&ip, "ip", ip, "IP")
 	flag.StringVar(&peerBindAddr, "peer-bind", peerBindAddr, "bind address of peer server")
 	flag.StringVar(&peerCertDir, "peer-cert-dir", peerCertDir, "certificate directory of peer server")
@@ -124,8 +128,8 @@ func newServer(clusterSessionManager *hub.ClusterSessionManager) *http.Server {
 	clusterConnectHandler := hub.NewClusterConnectHandler(clusterRepository)
 	clusterConnectHandler.AddCallbacks(clusterSessionManager)
 	clusterProxyLB := hub.NewClusterProxy(clusterSessionManager)
-	peersLister := k8s.NewPeersLister(kubeClient, "kopilot-hub")
-	peersLister.ServiceNamespace = "kopilot-system"
+	peersLister := k8s.NewPeersLister(kubeClient, serviceName)
+	peersLister.ServiceNamespace = serviceNamespace
 	peersLister.SelfIP = ip
 	clusterProxyLB.PeersLister = peersLister
 	clusterProxyLB.TryNextPeer = tryNextPeer
