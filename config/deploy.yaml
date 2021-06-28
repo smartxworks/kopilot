@@ -3,12 +3,35 @@ kind: Namespace
 metadata:
   name: kopilot-system
 ---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: kopilot-cert-issuer
+  namespace: kopilot-system
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kopilot-hub-peer-cert
+  namespace: kopilot-system
+spec:
+  dnsNames:
+    - kopilot-hub.kopilot-system.svc
+    - kopilot-hub.kopilot-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: kopilot-cert-issuer
+  secretName: kopilot-hub-peer-cert
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kopilot-hub
   namespace: kopilot-system
 spec:
+  replicas: 2
   selector:
     matchLabels:
       name: kopilot-hub
@@ -30,9 +53,14 @@ spec:
           ports:
             - name: webhook
               containerPort: 9443
+            - name: peer
+              containerPort: 6443
           volumeMounts:
             - name: webhook-server-cert
               mountPath: /tmp/k8s-webhook-server/serving-certs
+              readOnly: true
+            - name: peer-cert
+              mountPath: /tmp/kopilot-hub/peer-certs
               readOnly: true
         - name: kube-rbac-proxy
           image: quay.io/brancz/kube-rbac-proxy:v0.10.0
@@ -49,6 +77,10 @@ spec:
           secret:
             secretName: kopilot-hub-webhook-server-cert
             defaultMode: 420
+        - name: peer-cert
+          secret:
+            secretName: kopilot-hub-peer-cert
+            defaultMode: 420
 ---
 apiVersion: v1
 kind: Service
@@ -60,5 +92,9 @@ spec:
   selector:
     name: kopilot-hub
   ports:
-    - port: 443
+    - name: https
+      port: 443
       targetPort: https
+    - name: peer
+      port: 6443
+      targetPort: peer

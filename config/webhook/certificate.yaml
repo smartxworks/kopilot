@@ -1,12 +1,4 @@
 apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: selfsigned-issuer
-  namespace: kopilot-system
-spec:
-  selfSigned: {}
----
-apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: kopilot-hub-webhook-server-cert
@@ -17,5 +9,5 @@ spec:
     - kopilot-hub-webhook.kopilot-system.svc.cluster.local
   issuerRef:
     kind: Issuer
-    name: selfsigned-issuer
+    name: kopilot-cert-issuer
   secretName: kopilot-hub-webhook-server-cert

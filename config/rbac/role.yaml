@@ -7,6 +7,14 @@ metadata:
   name: kopilot-hub
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - endpoints
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - kopilot.smartx.com
   resources:
   - clusters
