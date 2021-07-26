@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kopilot-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kopilot-agent
+  namespace: kopilot-system
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      name: kopilot-agent
+  template:
+    metadata:
+      labels:
+        name: kopilot-agent
+    spec:
+      serviceAccountName: kopilot-agent
+      containers:
+        - name: kopilot-agent
+          image: "{{ .imageName }}"
+          args:
+            - -connect
+            - "{{ .connectURL }}"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kopilot-agent
+  namespace: kopilot-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kopilot-agent-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: kopilot-agent
+    namespace: kopilot-system

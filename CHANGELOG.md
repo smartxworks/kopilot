@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Expose hub API via kube-apiserver
+- Change to use RBAC in agent instead of front-proxy cert
+
 ## [0.2.0] - 2021-06-28
 
 ### Added

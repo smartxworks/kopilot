@@ -39,8 +39,6 @@ import (
 func main() {
 	connectURL := ""
 	flag.StringVar(&connectURL, "connect", connectURL, "connect URL of kopilot-hub")
-	certDir := "/etc/kubernetes/pki"
-	flag.StringVar(&certDir, "cert-dir", certDir, "path to certificates directory")
 	apiserverAddr := "kubernetes.default"
 	flag.StringVar(&apiserverAddr, "apiserver", apiserverAddr, "kube-apiserver address")
 	flag.Parse()
@@ -51,7 +49,7 @@ func main() {
 	}
 	wsConn, _, err := dialer.Dial(connectURL, nil)
 	if err != nil {
-		log.Fatalf("failed to dial hub: %s", err)
+		log.Fatalf("failed to dial hub %q: %s", connectURL, err)
 	}
 
 	sess, err := yamux.Client(wsConn.UnderlyingConn(), nil)
@@ -68,29 +66,28 @@ func main() {
 
 	apiserverProxy := httputil.NewSingleHostReverseProxy(apiserverURL)
 
+	saDir := "/run/secrets/kubernetes.io/serviceaccount"
+	token, err := os.ReadFile(filepath.Join(saDir, "token"))
+	if err != nil {
+		log.Fatalf("failed to read token: %s", err)
+	}
+
 	origDirector := apiserverProxy.Director
 	apiserverProxy.Director = func(req *http.Request) {
 		origDirector(req)
-		req.Header.Set("X-Remote-User", "kubernetes-admin")
-		req.Header.Set("X-Remote-Group", "system:masters")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", string(token)))
 	}
 
-	clientCert, err := tls.LoadX509KeyPair(filepath.Join(certDir, "front-proxy-client.crt"), filepath.Join(certDir, "front-proxy-client.key"))
-	if err != nil {
-		log.Fatalf("failed to load client cert: %s", err)
-	}
-
-	caCert, err := ioutil.ReadFile(filepath.Join(certDir, "ca.crt"))
+	caCert, err := ioutil.ReadFile(filepath.Join(saDir, "ca.crt"))
 	if err != nil {
 		log.Fatalf("failed to load CA cert: %s", err)
 	}
-
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCert)
+
 	apiserverProxy.Transport = &http.Transport{
 		TLSClientConfig: &tls.Config{
-			Certificates: []tls.Certificate{clientCert},
-			RootCAs:      caCertPool,
+			RootCAs: caCertPool,
 		},
 	}
 
