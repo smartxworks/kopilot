@@ -15,6 +15,9 @@ build:
     - image: kopilot-agent
       docker:
         dockerfile: build/kopilot-agent/Dockerfile
+    - image: kopilot-webhook
+      docker:
+        dockerfile: build/kopilot-webhook/Dockerfile
 deploy:
   kustomize:
     paths:

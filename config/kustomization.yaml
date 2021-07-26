@@ -1,5 +1,6 @@
 resources:
   - crd
-  - rbac
-  - webhook
-  - deploy.yaml
+  - namespace.yaml
+  - cert-issuer.yaml
+  - kopilot-hub
+  - kopilot-webhook

@@ -1,0 +1,4 @@
+resources:
+  - role.yaml
+  - deploy.yaml
+  - anonymous.yaml

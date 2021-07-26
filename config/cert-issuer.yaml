@@ -1,0 +1,7 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: kopilot-cert-issuer
+  namespace: kopilot-system
+spec:
+  selfSigned: {}

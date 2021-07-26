@@ -1,0 +1,20 @@
+resources:
+  - deploy.yaml
+  - manifests.yaml
+
+patchesStrategicMerge:
+  - patch.yaml
+
+patchesJson6902:
+  - target:
+      name: mutating-webhook-configuration
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: kopilot-mutating-webhook-configuration
+  - target:
+      name: validating-webhook-configuration
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: kopilot-validating-webhook-configuration

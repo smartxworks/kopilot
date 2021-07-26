@@ -1,7 +1,6 @@
 # Kopilot
 
 [![build](https://github.com/smartxworks/kopilot/actions/workflows/build.yml/badge.svg)](https://github.com/smartxworks/kopilot/actions/workflows/build.yml)
-[![codecov](https://codecov.io/gh/smartxworks/kopilot/branch/master/graph/badge.svg?token=CG68MX4QJ9)](https://codecov.io/gh/smartxworks/kopilot)
 [![Maintainability](https://api.codeclimate.com/v1/badges/61de6301682f7c3c30a3/maintainability)](https://codeclimate.com/github/smartxworks/kopilot/maintainability)
 [![Go Report Card](https://goreportcard.com/badge/github.com/smartxworks/kopilot)](https://goreportcard.com/report/github.com/smartxworks/kopilot)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
@@ -47,10 +46,10 @@ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.3
 Once _cert-manager_ is running, you can now deploy the _kopilot-hub_ on the host cluster:
 
 ```shell
-kubectl apply -f https://github.com/smartxworks/kopilot/releases/download/v0.2.0/kopilot.yaml
+kubectl apply -f https://github.com/smartxworks/kopilot/releases/download/v0.3.0/kopilot.yaml
 export HUB_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}')
-echo $HUB_IP  # change if the value is incorrect
-export HUB_PORT=$(kubectl get service kopilot-hub -n kopilot-system -o jsonpath='{.spec.ports[0].nodePort}')
+echo $HUB_IP  # change if this value is incorrect
+export HUB_PORT=6443
 kubectl create configmap kopilot-hub -n kopilot-system --from-literal=public_addr=$HUB_IP:$HUB_PORT
 ```
 
@@ -66,10 +65,11 @@ Then, deploy the _kopilot-agent_ on the member cluster:
 
 ```shell
 export HUB_ADDR=$(kubectl get configmap kopilot-hub -n kopilot-system -o jsonpath='{.data.public_addr}')
-export TOKEN=$(kubectl get cluster sample -o jsonpath='{.token}')
-export PROVIDER=minikube  # only required if the member cluster is a minikube cluster
+export MEMBER_NAMESPACE=default
+export MEMBER_NAME=sample
+export MEMBER_TOKEN=$(kubectl get cluster sample -o jsonpath='{.token}')
 export MEMBER_KUBECONFIG=~/.kube/member.config  # change to your member cluster's kubeconfig path
-curl -k "https://$HUB_ADDR/kopilot-agent.yaml?token=$TOKEN&provider=$PROVIDER" | kubectl apply --kubeconfig=$MEMBER_KUBECONFIG -f -
+curl -k "https://$HUB_ADDR/apis/subresource.kopilot.smartx.com/v1alpha1/namespaces/$MEMBER_NAMESPACE/clusters/$MEMBER_NAME/agent?token=$MEMBER_TOKEN" | kubectl apply --kubeconfig=$MEMBER_KUBECONFIG -f -
 ```
 
 Once the _kopilot-agent_ is running, you can now send Kubernetes API requests to the member cluster from the host cluster with proper RBAC rules:
@@ -105,10 +105,12 @@ kind: ClusterRole
 metadata:
   name: kubectl
 rules:
-  - nonResourceURLs:
-      - /proxy/*
+  - apiGroups:
+      - subresource.kopilot.smartx.com
+    resources:
+      - clusters/proxy
     verbs:
-      - get
+      - "*"
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -128,12 +130,14 @@ EOF
 kubectl exec kubectl -n kopilot-system -it -- /bin/bash
 
 # create the member cluster's kubeconfig with service account token
-export CLUSTER=default_sample
-kubectl config set-cluster $CLUSTER --server=https://kopilot-hub.kopilot-system/proxy/$CLUSTER --insecure-skip-tls-verify=true
-kubectl config set-context $CLUSTER --cluster=$CLUSTER
+export MEMBER_NAMESPACE=default
+export MEMBER_NAME=sample
+export MEMBER=${MEMBER_NAMESPACE}_${MEMBER_NAME}
+kubectl config set-cluster $MEMBER --server=https://kubernetes.default/apis/subresource.kopilot.smartx.com/v1alpha1/namespaces/$MEMBER_NAMESPACE/clusters/$MEMBER_NAME/proxy --insecure-skip-tls-verify=true
+kubectl config set-context $MEMBER --cluster=$MEMBER
 kubectl config set-credentials user --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-kubectl config set-context $CLUSTER --user=user
-kubectl config use-context $CLUSTER
+kubectl config set-context $MEMBER --user=user
+kubectl config use-context $MEMBER
 
 # get pods of the member cluster
 kubectl get pods -A
