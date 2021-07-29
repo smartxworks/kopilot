@@ -31,4 +31,4 @@ jobs:
 
       - run: >
           docker run -v $PWD:/workspace -w /workspace golang:1.16.6-alpine3.14@sha256:982d77b170e0a8018ff0013fec14c825d84d1f310e7075935bdc7e97c1730b7d
-          go test -p 1 ./...
+          /bin/sh -c "apk add gcc musl-dev && go test -p 1 ./..."
